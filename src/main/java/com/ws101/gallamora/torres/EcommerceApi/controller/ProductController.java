@@ -10,8 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Controller for product API endpoints
- * handles all requests going to /api/v1/products
+ * Controller for product API endpoints.
+ * Handles all requests going to /api/v1/products.
+ *
+ * @author P.M A. Gallamora
+ * @author P.G C. Torres
  */
 @RestController
 @RequestMapping("/api/v1/products")
@@ -24,14 +27,23 @@ public class ProductController {
         this.productService = productService;
     }
 
-    /** GET /api/v1/products - Returns all products */
+    /**
+     * Returns all products in the list.
+     *
+     * @return ResponseEntity with 200 OK and list of all products
+     */
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         List<Product> products = productService.getAllProducts();
         return ResponseEntity.ok(products);
     }
 
-    /** GET /api/v1/products/{id} - Returns one product by ID */
+    /**
+     * Returns a single product by its ID.
+     *
+     * @param id the product ID from the URL path
+     * @return ResponseEntity with 200 OK and the product, or 404 Not Found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         Optional<Product> product = productService.getProductById(id);
@@ -42,7 +54,13 @@ public class ProductController {
         }
     }
 
-    /** GET /api/v1/products/filter - Filters products */
+    /**
+     * Filters products by a given type and value.
+     *
+     * @param filterType  what to filter by (category, name, price)
+     * @param filterValue the value to filter with
+     * @return ResponseEntity with 200 OK and matching products, or 400 Bad Request
+     */
     @GetMapping("/filter")
     public ResponseEntity<List<Product>> filterProducts(
             @RequestParam String filterType,
@@ -54,18 +72,28 @@ public class ProductController {
         return ResponseEntity.ok(results);
     }
 
-    /** POST /api/v1/products - Creates a new product */
+    /**
+     * Creates a new product.
+     *
+     * @param product the product data from the request body
+     * @return ResponseEntity with 201 Created and the new product, or 400 Bad
+     *         Request
+     */
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        if (product.getName() == null || product.getName().isBlank()) {
+        // Validate name - required, minimum 2 characters
+        if (product.getName() == null || product.getName().length() < 2) {
             return ResponseEntity.badRequest().build();
         }
+        // Validate price - must be positive
         if (product.getPrice() <= 0) {
             return ResponseEntity.badRequest().build();
         }
+        // Validate category - required
         if (product.getCategory() == null || product.getCategory().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
+        // Validate stock - must be non-negative
         if (product.getStockQuantity() < 0) {
             return ResponseEntity.badRequest().build();
         }
@@ -73,7 +101,13 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    /** PUT /api/v1/products/{id} - Replaces entire product */
+    /**
+     * Replaces the entire product with new data.
+     *
+     * @param id      the product ID from the URL path
+     * @param product the new product data from the request body
+     * @return ResponseEntity with 200 OK and updated product, or 404 Not Found
+     */
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
         Optional<Product> updated = productService.updateProduct(id, product);
@@ -84,7 +118,13 @@ public class ProductController {
         }
     }
 
-    /** PATCH /api/v1/products/{id} - Partially updates a product */
+    /**
+     * Partially updates a product.
+     *
+     * @param id      the product ID from the URL path
+     * @param product the partial product data from the request body
+     * @return ResponseEntity with 200 OK and updated product, or 404 Not Found
+     */
     @PatchMapping("/{id}")
     public ResponseEntity<Product> patchProduct(@PathVariable Long id, @RequestBody Product product) {
         Optional<Product> patched = productService.patchProduct(id, product);
@@ -95,7 +135,12 @@ public class ProductController {
         }
     }
 
-    /** DELETE /api/v1/products/{id} - Deletes a product */
+    /**
+     * Deletes a product by ID.
+     *
+     * @param id the product ID from the URL path
+     * @return ResponseEntity with 204 No Content if deleted, or 404 Not Found
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         boolean deleted = productService.deleteProduct(id);

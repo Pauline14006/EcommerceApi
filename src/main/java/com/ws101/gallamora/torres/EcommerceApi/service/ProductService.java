@@ -12,7 +12,7 @@ import java.util.Optional;
  * like getting, adding, updating, and deleting
  *
  * @author P.M A. Gallamora
- * @author P.G C. Torress
+ * @author P.G C. Torres
  */
 @Service
 public class ProductService {
@@ -49,26 +49,46 @@ public class ProductService {
                 "Accessories", 35, "pics/product2.webp"));
     }
 
-    /** Returns all products in the list */
+    /**
+     * Returns all products in the list.
+     *
+     * @return a List containing all products
+     */
     public List<Product> getAllProducts() {
         return productList;
     }
 
-    /** Finds a product by its ID */
+    /**
+     * Finds a product by its ID.
+     *
+     * @param id the ID of the product to find
+     * @return an Optional containing the product if found, or empty if not found
+     */
     public Optional<Product> getProductById(Long id) {
         return productList.stream()
                 .filter(product -> product.getId().equals(id))
                 .findFirst();
     }
 
-    /** Creates a new product and adds it to the list */
+    /**
+     * Creates a new product and adds it to the list.
+     *
+     * @param product the product data to be added
+     * @return the newly created product with its generated ID
+     */
     public Product createProduct(Product product) {
         product.setId(idCounter++);
         productList.add(product);
         return product;
     }
 
-    /** Replaces an entire product with new data (PUT) */
+    /**
+     * Replaces an entire product with new data.
+     *
+     * @param id             the ID of the product to update
+     * @param updatedProduct the new product data to replace with
+     * @return an Optional with the updated product, or empty if not found
+     */
     public Optional<Product> updateProduct(Long id, Product updatedProduct) {
         Optional<Product> existing = getProductById(id);
         if (existing.isPresent()) {
@@ -85,7 +105,11 @@ public class ProductService {
     }
 
     /**
-     * Partially updates a product - only updates fields that are not null (PATCH)
+     * Partially updates a product - only updates fields that are provided.
+     *
+     * @param id    the ID of the product to patch
+     * @param patch the partial product data containing fields to update
+     * @return an Optional with the patched product, or empty if not found
      */
     public Optional<Product> patchProduct(Long id, Product patch) {
         Optional<Product> existing = getProductById(id);
@@ -108,12 +132,25 @@ public class ProductService {
         return Optional.empty();
     }
 
-    /** Deletes a product by ID */
+    /**
+     * Deletes a product by ID.
+     *
+     * @param id the ID of the product to delete
+     * @return true if the product was deleted, false if not found
+     */
     public boolean deleteProduct(Long id) {
         return productList.removeIf(product -> product.getId().equals(id));
     }
 
-    /** Filters products by filterType and filterValue */
+    /**
+     * Filters products by a given filter type and value.
+     *
+     * @param filterType  the field to filter by (category, name, or price)
+     * @param filterValue the value to match against
+     * @return a List of products that match the filter, or empty list if no match
+     * @throws NumberFormatException if filterType is price and filterValue is not a
+     *                               number
+     */
     public List<Product> filterProducts(String filterType, String filterValue) {
         return switch (filterType.toLowerCase()) {
             case "category" -> productList.stream()
