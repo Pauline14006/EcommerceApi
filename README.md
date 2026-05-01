@@ -1,135 +1,117 @@
-# EcommerceApi - Lab 7
+# Lab 8 – Database Integration & Fetch API
 
-A simple RESTful API for an e-commerce product catalog built with Spring Boot.
-Uses in-memory storage (no database needed).
+**Authors:** P.M A. Gallamora · P.G C. Torres  
+**Course:** WS101 – Web Services
 
 ---
 
-## How to Run
+## Overview
 
-1. Make sure you have **Java 21** installed
-2. Open the project folder in VS Code or IntelliJ
-3. Run this command in the terminal:
+This lab transitions the e-commerce backend from in-memory `ArrayList` storage (Lab 7) to a persistent **MySQL** database using **Spring Data JPA / Hibernate**. The frontend is updated to consume all API endpoints dynamically using the **Fetch API** with proper `async/await` and error handling.
+
+---
+
+## Database Schema
+
+Three entities are defined, modelling real-world e-commerce relationships.
+
+### `categories`
+| Column | Type         | Constraints            |
+|--------|--------------|------------------------|
+| id     | BIGINT       | PK, AUTO_INCREMENT     |
+| name   | VARCHAR(255) | NOT NULL, UNIQUE       |
+
+### `products`
+| Column       | Type    | Constraints                         |
+|--------------|---------|-------------------------------------|
+| id           | BIGINT  | PK, AUTO_INCREMENT                  |
+| name         | VARCHAR | NOT NULL                            |
+| description  | TEXT    |                                     |
+| price        | DOUBLE  | NOT NULL                            |
+| stock_quantity | INT   | NOT NULL                            |
+| image_url    | VARCHAR |                                     |
+| category_id  | BIGINT  | FK → categories(id)  *(Many-to-One)*|
+
+### `orders`
+| Column        | Type      | Constraints        |
+|---------------|-----------|--------------------|
+| id            | BIGINT    | PK, AUTO_INCREMENT |
+| customer_name | VARCHAR   | NOT NULL           |
+| created_at    | TIMESTAMP | NOT NULL           |
+
+### `order_items`
+| Column     | Type   | Constraints                     |
+|------------|--------|---------------------------------|
+| id         | BIGINT | PK, AUTO_INCREMENT              |
+| order_id   | BIGINT | FK → orders(id)  *(Many-to-One)*|
+| product_id | BIGINT | FK → products(id)               |
+| quantity   | INT    | NOT NULL                        |
+| unit_price | DOUBLE | NOT NULL                        |
+
+### Relationships
 
 ```
-./gradlew bootRun
+Category  ──< Product     (One-to-Many)
+Order     ──< OrderItem   (One-to-Many)
+Product   ──< OrderItem   (One-to-Many, via FK)
 ```
-
-4. The API will start at: `http://localhost:8080`
 
 ---
 
 ## API Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | /api/v1/products | Get all products |
-| GET | /api/v1/products/{id} | Get one product by ID |
-| GET | /api/v1/products/filter?filterType=category&filterValue=Electronics | Filter products |
-| POST | /api/v1/products | Create a new product |
-| PUT | /api/v1/products/{id} | Replace a product |
-| PATCH | /api/v1/products/{id} | Partially update a product |
-| DELETE | /api/v1/products/{id} | Delete a product |
+All endpoints are prefixed with `/api/v1/products`.
+
+| Method | URL                  | Description                          |
+|--------|----------------------|--------------------------------------|
+| GET    | `/`                  | Get all products                     |
+| GET    | `/{id}`              | Get product by ID                    |
+| GET    | `/filter`            | Filter by `filterType` & `filterValue` (query params) |
+| POST   | `/?categoryName=X`   | Create a new product                 |
+| PUT    | `/{id}?categoryName=X` | Full update of a product           |
+| PATCH  | `/{id}`              | Partial update of a product          |
+| DELETE | `/{id}`              | Delete a product                     |
 
 ---
 
-## Sample Requests
+## Setup Instructions
 
-### GET all products
-```
-GET http://localhost:8080/api/v1/products
-```
+### 1. Create the MySQL Database
 
-### GET one product
-```
-GET http://localhost:8080/api/v1/products/1
+```sql
+CREATE DATABASE ecommerce_db;
 ```
 
-### Filter by category
-```
-GET http://localhost:8080/api/v1/products/filter?filterType=category&filterValue=Electronics
+### 2. Configure Credentials
+
+Edit `src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce_db
+spring.datasource.username=<your_username>
+spring.datasource.password=<your_password>
 ```
 
-### Filter by name
-```
-GET http://localhost:8080/api/v1/products/filter?filterType=name&filterValue=headphones
+### 3. Run the Backend
+
+```bash
+./gradlew bootRun
 ```
 
-### Filter by max price
-```
-GET http://localhost:8080/api/v1/products/filter?filterType=price&filterValue=50
-```
+Hibernate will auto-create the tables on first run (`ddl-auto=update`).
 
-### POST - Create product
-```json
-POST http://localhost:8080/api/v1/products
-Content-Type: application/json
+### 4. Open the Frontend
 
-{
-  "name": "New Product",
-  "description": "A great product",
-  "price": 29.99,
-  "category": "Electronics",
-  "stockQuantity": 10,
-  "imageUrl": "pics/product1.png"
-}
-```
-
-### PUT - Replace product
-```json
-PUT http://localhost:8080/api/v1/products/1
-Content-Type: application/json
-
-{
-  "name": "Updated Name",
-  "description": "Updated description",
-  "price": 49.99,
-  "category": "Electronics",
-  "stockQuantity": 20,
-  "imageUrl": "pics/product1.png"
-}
-```
-
-### PATCH - Partial update
-```json
-PATCH http://localhost:8080/api/v1/products/1
-Content-Type: application/json
-
-{
-  "price": 39.99
-}
-```
-
-### DELETE - Delete product
-```
-DELETE http://localhost:8080/api/v1/products/1
-```
+Open `frontend/index.html` with **VS Code Live Server** on port `5500`.
 
 ---
 
-## HTTP Status Codes Used
+## Git Workflow
 
-| Scenario | Status Code |
-|----------|-------------|
-| Successful GET | 200 OK |
-| Successful POST | 201 Created |
-| Successful DELETE | 204 No Content |
-| Product not found | 404 Not Found |
-| Invalid input | 400 Bad Request |
-| Server error | 500 Internal Server Error |
+```
+main
+ └── feat:db-integration   ← All Lab 8 changes
+```
 
----
+Branches are NOT deleted after merge per lab requirements.
 
-## Known Limitations
-
-- Data is stored in memory only — all data resets when the app restarts
-- No database or file persistence
-- No authentication or authorization
-
----
-
-## Dependencies
-
-- Spring Boot 3.5.0
-- Spring Web
-- Lombok
