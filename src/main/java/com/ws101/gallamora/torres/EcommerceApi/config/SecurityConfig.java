@@ -16,7 +16,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Spring Security configuration.
- * Defines filter chain, password encoding, and access rules.
  *
  * @author P.M A. Gallamora
  * @author P.G C. Torres
@@ -59,7 +58,7 @@ public class SecurityConfig {
             )
             .formLogin(Customizer.withDefaults())
             .logout(Customizer.withDefaults())
-            .csrf(Customizer.withDefaults());
+            .csrf(csrf -> csrf.disable());
 
         return http.build();
     }
