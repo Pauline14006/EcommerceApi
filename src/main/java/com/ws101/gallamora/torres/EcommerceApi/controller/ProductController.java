@@ -4,6 +4,7 @@ import com.ws101.gallamora.torres.EcommerceApi.model.Product;
 import com.ws101.gallamora.torres.EcommerceApi.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,15 +12,6 @@ import java.util.Optional;
 
 /**
  * REST controller for product-related endpoints.
- * <p>
- * Task 4: All endpoints continue to expose the same HTTP interface as Lab 7 but now
- * delegate to a database-backed {@link ProductService}. CORS is configured globally
- * in {@code WebConfig} (Task 7), so the class-level {@code @CrossOrigin} is removed.
- * </p>
- * <p>
- * The {@code categoryName} query parameter is accepted on POST and PUT so the caller
- * does not need to embed a full Category object – just a plain string name.
- * </p>
  *
  * @author P.M A. Gallamora
  * @author P.G C. Torres
@@ -36,6 +28,7 @@ public class ProductController {
 
     /**
      * Returns all products persisted in the database.
+     * Public endpoint - no authentication required.
      *
      * @return 200 OK with a list of all products
      */
@@ -46,6 +39,7 @@ public class ProductController {
 
     /**
      * Returns a single product by its database ID.
+     * Public endpoint - no authentication required.
      *
      * @param id the product ID from the URL path
      * @return 200 OK and the product, or 404 Not Found
@@ -59,11 +53,11 @@ public class ProductController {
 
     /**
      * Filters products by a given type and value.
-     * Supported types: {@code category}, {@code name}, {@code price}.
+     * Public endpoint - no authentication required.
      *
      * @param filterType  what to filter by
      * @param filterValue the value to filter with
-     * @return 200 OK with matching products, or 400 Bad Request for invalid input
+     * @return 200 OK with matching products, or 400 Bad Request
      */
     @GetMapping("/filter")
     public ResponseEntity<List<Product>> filterProducts(
@@ -77,16 +71,13 @@ public class ProductController {
     }
 
     /**
-     * Creates a new product and persists it to the database.
-     * <p>
-     * The {@code categoryName} request parameter maps the product to an existing
-     * category or creates a new one automatically.
-     * </p>
+     * Creates a new product. Admin only.
      *
      * @param product      the product data from the request body
      * @param categoryName the category the product should belong to
-     * @return 201 Created and the saved product, or 400 Bad Request for invalid input
+     * @return 201 Created and the saved product, or 400 Bad Request
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<Product> createProduct(
             @RequestBody Product product,
@@ -110,13 +101,14 @@ public class ProductController {
     }
 
     /**
-     * Replaces all fields of an existing product.
+     * Replaces all fields of an existing product. Admin only.
      *
      * @param id           the product ID from the URL path
-     * @param product      the replacement product data from the request body
-     * @param categoryName the (possibly updated) category name
+     * @param product      the replacement product data
+     * @param categoryName the updated category name
      * @return 200 OK and the updated product, or 404 Not Found
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
@@ -127,12 +119,13 @@ public class ProductController {
     }
 
     /**
-     * Partially updates a product – only provided fields are changed.
+     * Partially updates a product. Admin only.
      *
      * @param id      the product ID from the URL path
-     * @param product the partial product data from the request body
+     * @param product the partial product data
      * @return 200 OK and the patched product, or 404 Not Found
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<Product> patchProduct(@PathVariable Long id, @RequestBody Product product) {
         Product patched = productService.patchProduct(id, product);
@@ -140,11 +133,12 @@ public class ProductController {
     }
 
     /**
-     * Deletes a product by its ID.
+     * Deletes a product by its ID. Admin only.
      *
      * @param id the product ID from the URL path
      * @return 204 No Content if deleted, or 404 Not Found
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
