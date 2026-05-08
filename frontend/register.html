@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register – MyStore</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .auth-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        .auth-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-card h2 { margin-bottom: 1.5rem; text-align: center; }
+        .auth-card input, .auth-card select {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .auth-card button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #f57224;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .auth-card button:hover { background: #e06010; }
+        .auth-msg { margin-top: 1rem; text-align: center; }
+        .auth-msg.error { color: red; }
+        .auth-msg.success { color: green; }
+        .auth-links { text-align: center; margin-top: 1rem; }
+        .auth-links a { color: #f57224; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">🛒</span>
+                <div>
+                    <div class="logo-text">Ecommerce</div>
+                    <div class="logo-sub">Princess Torres + Pauline Gallamora</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <h2>Register</h2>
+            <input type="text" id="username" placeholder="Username (3-20 characters)" />
+            <input type="password" id="password" placeholder="Password (min 8 characters)" />
+            <select id="role">
+                <option value="ROLE_USER">Shopper (User)</option>
+                <option value="ROLE_ADMIN">Admin</option>
+            </select>
+            <button id="btnRegister">Register</button>
+            <p class="auth-msg" id="authMsg"></p>
+            <div class="auth-links">
+                <a href="login.html">Already have an account? Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('btnRegister').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            const authMsg = document.getElementById('authMsg');
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json().catch(() => response.text());
+
+                if (response.ok) {
+                    authMsg.className = 'auth-msg success';
+                    authMsg.textContent = 'Registered successfully! Redirecting to login...';
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                } else if (response.status === 400) {
+                    authMsg.className = 'auth-msg error';
+                    const errors = data.errors ? data.errors.join('\n') : JSON.stringify(data);
+                    authMsg.textContent = errors;
+                } else if (response.status === 409) {
+                    authMsg.className = 'auth-msg error';
+                    authMsg.textContent = 'Username already exists.';
+                } else {
+                    authMsg.className = 'auth-msg error';
+                    authMsg.textContent = 'Registration failed.';
+                }
+            } catch (err) {
+                authMsg.className = 'auth-msg error';
+                authMsg.textContent = 'Error connecting to server.';
+            }
+        });
+    </script>
+</body>
+</html>

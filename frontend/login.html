@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login – MyStore</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .auth-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        .auth-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-card h2 { margin-bottom: 1.5rem; text-align: center; }
+        .auth-card input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .auth-card button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #f57224;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .auth-card button:hover { background: #e06010; }
+        .auth-msg { margin-top: 1rem; text-align: center; color: red; }
+        .auth-links { text-align: center; margin-top: 1rem; }
+        .auth-links a { color: #f57224; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">🛒</span>
+                <div>
+                    <div class="logo-text">Ecommerce</div>
+                    <div class="logo-sub">Princess Torres + Pauline Gallamora</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Username" />
+            <input type="password" id="password" placeholder="Password" />
+            <button id="btnLogin">Login</button>
+            <p class="auth-msg" id="authMsg"></p>
+            <div class="auth-links">
+                <a href="register.html">Don't have an account? Register</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('btnLogin').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const authMsg = document.getElementById('authMsg');
+
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch('http://localhost:8080/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (response.ok || response.redirected) {
+                    window.location.href = 'index.html';
+                } else {
+                    authMsg.textContent = 'Invalid username or password.';
+                }
+            } catch (err) {
+                authMsg.textContent = 'Error connecting to server.';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,33 +1,46 @@
 /**
  * app.js – EcommerceAPI Frontend
  *
- * Task 5: Replaces all hard-coded static arrays with live Fetch API calls to the
- * Spring Boot backend. Every function uses async/await and wraps network calls in
- * try...catch blocks. response.ok is checked manually because the Fetch API only
- * rejects the Promise on network failures (e.g. no internet) – HTTP error codes
- * like 404 or 500 still resolve, so we must inspect the status ourselves.
+ * Task 5: Live Fetch API calls to the Spring Boot backend.
+ * Task 6-7: Session-based auth, 401/403 error handling, login redirect.
  *
  * @author P.M A. Gallamora
  * @author P.G C. Torres
  */
 
-// ─── Configuration ────────────────────────────────────────────────────────────
 const BASE_URL = 'http://localhost:8080/api/v1/products';
+const AUTH_URL = 'http://localhost:8080';
+
+
+async function apiFetch(url, options = {}) {
+    const response = await fetch(url, { ...options, credentials: 'include' });
+
+    if (response.status === 401) {
+        window.location.href = 'login.html';
+        return null;
+    }
+
+    if (response.status === 403) {
+        alert('Access Denied: You do not have permission to perform this action.');
+        return null;
+    }
+
+    return response;
+}
 
 // ─── DOM References ───────────────────────────────────────────────────────────
-const productGrid   = document.getElementById('productGrid');
-const filterType    = document.getElementById('filterType');
-const filterValue   = document.getElementById('filterValue');
-const btnFilter     = document.getElementById('btnFilter');
-const btnClear      = document.getElementById('btnClear');
-const btnAdd        = document.getElementById('btnAdd');
-const formMsg       = document.getElementById('formMsg');
-const resultCount   = document.getElementById('resultCount');
-const headerSearch  = document.getElementById('headerSearch');
-const btnHdrSearch  = document.getElementById('btnHeaderSearch');
+const productGrid  = document.getElementById('productGrid');
+const filterType   = document.getElementById('filterType');
+const filterValue  = document.getElementById('filterValue');
+const btnFilter    = document.getElementById('btnFilter');
+const btnClear     = document.getElementById('btnClear');
+const btnAdd       = document.getElementById('btnAdd');
+const formMsg      = document.getElementById('formMsg');
+const resultCount  = document.getElementById('resultCount');
+const headerSearch = document.getElementById('headerSearch');
+const btnHdrSearch = document.getElementById('btnHeaderSearch');
 
 // ─── Utility Helpers ──────────────────────────────────────────────────────────
-
 function showLoading() {
     productGrid.innerHTML = `<p class="state-msg">⏳ Loading products...</p>`;
     if (resultCount) resultCount.innerHTML = 'Loading...';
@@ -45,44 +58,27 @@ function showError(message) {
 // ─── Core Fetch Functions ─────────────────────────────────────────────────────
 
 /**
- * Task 5 – fetchProducts()
- *
- * Fetches all products from the backend and renders them into the product grid.
- * Called automatically on page load and after any write operation to refresh the UI.
- *
- * Error handling strategy:
- *  1. try...catch wraps the entire async block.
- *  2. response.ok is checked manually – a 404 or 500 response resolves the Promise
- *     but has ok === false, so we throw a custom Error with the HTTP status.
- *  3. Specific error messages are logged to the console for debugging.
- *
- * @param {string|null} url - Optional override URL (used for filtered calls).
+ * Fetches all products from the backend and renders them.
+ * GET /api/v1/products is public so no auth needed.
  */
 async function fetchProducts(url = null) {
     showLoading();
 
     try {
         const endpoint = url || BASE_URL;
-        const response = await fetch(endpoint);
+        const response = await apiFetch(endpoint);
+        if (!response) return;
 
-        // Manual check – Fetch only rejects on network failure, NOT on 4xx/5xx
         if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error('Resource not found (404).');
-            }
-            if (response.status >= 500) {
-                throw new Error(`Server error (${response.status}). Please try again later.`);
-            }
+            if (response.status === 404) throw new Error('Resource not found (404).');
+            if (response.status >= 500) throw new Error(`Server error (${response.status}). Please try again later.`);
             throw new Error(`Unexpected error: HTTP ${response.status}`);
         }
 
         const products = await response.json();
         console.log('[fetchProducts] Received', products.length, 'product(s):', products);
 
-        if (products.length === 0) {
-            showEmpty();
-            return;
-        }
+        if (products.length === 0) { showEmpty(); return; }
 
         if (resultCount) {
             resultCount.innerHTML = `<span>${products.length}</span> product${products.length !== 1 ? 's' : ''} found`;
@@ -97,15 +93,12 @@ async function fetchProducts(url = null) {
 }
 
 /**
- * Sends a POST request to create a new product.
- *
- * @param {Object} productData  - The product fields.
- * @param {string} categoryName - The category name sent as a query parameter.
+ * Sends a POST request to create a new product. Requires ADMIN role.
  */
 async function createProduct(productData, categoryName) {
     try {
         const url = `${BASE_URL}?categoryName=${encodeURIComponent(categoryName)}`;
-        const response = await fetch(url, {
+        const response = await apiFetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -113,6 +106,8 @@ async function createProduct(productData, categoryName) {
             },
             body: JSON.stringify(productData)
         });
+
+        if (!response) return null;
 
         if (!response.ok) {
             const errorBody = await response.json().catch(() => null);
@@ -131,18 +126,16 @@ async function createProduct(productData, categoryName) {
 }
 
 /**
- * Sends a DELETE request to remove a product by its ID.
- *
- * @param {number} id - The ID of the product to delete.
+ * Sends a DELETE request to remove a product. Requires ADMIN role.
  */
 async function deleteProduct(id) {
     try {
-        const response = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
+        const response = await apiFetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
+
+        if (!response) return;
 
         if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error(`Product with ID ${id} not found.`);
-            }
+            if (response.status === 404) throw new Error(`Product with ID ${id} not found.`);
             throw new Error(`Failed to delete product (HTTP ${response.status})`);
         }
 
@@ -155,12 +148,6 @@ async function deleteProduct(id) {
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
-
-/**
- * Converts an array of product objects into HTML cards and injects them into the DOM.
- *
- * @param {Array} products - Array of product objects returned from the API.
- */
 function renderProducts(products) {
     productGrid.innerHTML = products.map(p => `
         <div class="product-card" data-id="${p.id}">
@@ -181,7 +168,6 @@ function renderProducts(products) {
         </div>
     `).join('');
 
-    // Attach delete handlers
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -212,7 +198,6 @@ btnFilter.addEventListener('click', () => {
 btnClear.addEventListener('click', () => {
     filterType.value  = '';
     filterValue.value = '';
-    // Reset active category button
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.cat-btn[data-cat=""]').classList.add('active');
     fetchProducts();
@@ -240,7 +225,6 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
     });
 });
 
-// Add Product button
 btnAdd.addEventListener('click', async () => {
     const name     = document.getElementById('newName').value.trim();
     const category = document.getElementById('newCategory').value.trim();
@@ -249,7 +233,6 @@ btnAdd.addEventListener('click', async () => {
     const desc     = document.getElementById('newDesc').value.trim();
     const imageUrl = document.getElementById('newImage').value.trim();
 
-    // Client-side validation
     if (!name || name.length < 2) { showFormMsg('Product name must be at least 2 characters.', false); return; }
     if (!category)                 { showFormMsg('Category is required.', false); return; }
     if (!price || price <= 0)      { showFormMsg('Price must be a positive number.', false); return; }
@@ -267,8 +250,6 @@ btnAdd.addEventListener('click', async () => {
     }
 });
 
-// ─── Form Helpers ─────────────────────────────────────────────────────────────
-
 function showFormMsg(msg, success) {
     formMsg.textContent = msg;
     formMsg.className   = 'form-msg ' + (success ? 'ok' : 'err');
@@ -280,7 +261,4 @@ function clearForm() {
         .forEach(id => { document.getElementById(id).value = ''; });
 }
 
-// ─── Initialisation ───────────────────────────────────────────────────────────
-
-// Task 5: Call fetchProducts() on page load
 fetchProducts();
