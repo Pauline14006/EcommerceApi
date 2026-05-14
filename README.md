@@ -115,3 +115,59 @@ main
 
 Branches are NOT deleted after merge per lab requirements.
 
+
+### Step 2 — Login
+```
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+username=testadmin&password=password123
+```
+Expected: `302 Redirect` — Check the **Cookies** tab in Postman. You should see a `JSESSIONID` cookie set.
+
+> ⚙️ In Postman Settings: make sure **"Automatically follow redirects"** and **"Save cookies"** are turned ON.
+
+---
+
+### Step 3 — Access a protected endpoint (with session)
+```
+POST http://localhost:8080/api/v1/products
+Content-Type: application/json
+
+{
+  "name": "Test Product",
+  "price": 25.00,
+  "categoryName": "Electronics",
+  "stockQuantity": 10
+}
+```
+Expected: `201 Created` — product is created ✅
+
+---
+
+### Step 4 — Delete the cookie (simulate logout)
+
+In Postman, go to **Cookies** → delete the `JSESSIONID` cookie manually.
+
+Then try the same request again:
+```
+POST http://localhost:8080/api/v1/products
+```
+Expected: `401 Unauthorized` or redirect to login ✅
+
+---
+
+### Step 5 — Test validation error
+```
+POST http://localhost:8080/api/v1/products
+Content-Type: application/json
+
+{
+  "name": "X",
+  "price": -5.00,
+  "categoryName": "Electronics",
+  "stockQuantity": -1
+}
+```
+Expected: `400 Bad Request` with error details showing which fields failed ✅
+
