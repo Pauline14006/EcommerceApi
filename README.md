@@ -1,6 +1,7 @@
-# Lab 8 – Database Integration & Fetch API
+# Ecommerce-Api – Laboratory 9: Securing the API with Sessions & Input Validation
 
-**Authors:** P.M A. Gallamora · P.G C. Torres  
+
+**Authors:** P.M A. Gallamora · P.G C. Torres
 **Course:** WS101 – Web Services
 
 ---
