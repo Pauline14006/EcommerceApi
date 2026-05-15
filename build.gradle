@@ -21,17 +21,22 @@ dependencies {
     // Web MVC
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
-    // Task 1: Spring Data JPA
+    // Spring Data JPA
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // Task 1: MySQL Driver
+    // MySQL Driver
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Task 1: Spring Security
+    // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
-    // Task 4: Bean Validation
+    // Bean Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Lab 10 - JWT Dependencies
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
